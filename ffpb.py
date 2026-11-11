@@ -46,10 +46,10 @@ from tqdm import tqdm
 
 class ProgressNotifier(object):
 
-    _DURATION_RX = re.compile(b"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
-    _PROGRESS_RX = re.compile(b"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
-    _SOURCE_RX = re.compile(b"from '(.*)':")
-    _FPS_RX = re.compile(b"(\d{2}\.\d{2}|\d{2}) fps")
+    _DURATION_RX = re.compile(rb"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
+    _PROGRESS_RX = re.compile(rb"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
+    _SOURCE_RX = re.compile(rb"from '(.*)':")
+    _FPS_RX = re.compile(rb"(\d{2}\.\d{2}|\d{2}) fps")
 
     @staticmethod
     def _seconds(hours, minutes, seconds):
@@ -166,13 +166,17 @@ def main(argv=None, stream=sys.stderr, encoding=None, tqdm=tqdm):
         print("Exiting.", file=stream)
         return signal.SIGINT + 128  # POSIX standard
 
+    except FileNotFoundError:
+        print("Error: 'ffmpeg' executable not found in PATH.", file=stream)
+        return 127
+
     except Exception as err:
         print("Unexpected exception:", err, file=stream)
         return 1
 
     else:
-        if p.returncode != 0:
-            print(notifier.lines[-1].decode(notifier.encoding), file=stream)
+        if p.returncode != 0 and notifier.lines:
+            print(notifier.lines[-1].decode(notifier.encoding, errors='replace'), file=stream)
         return p.returncode
 
 
